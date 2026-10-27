@@ -53,3 +53,22 @@ Fig.4 复现里的动作枚举是：
 - 对方 `servicer.py` 必须把 `-1` 映射成左转、`1` 映射成右转、`0` 映射成不转；
   旧的 `end_move` 只处理 `0/1`，需要他们改。
 - 本仓库没有服务端，也没有把 SNN 决策循环直接接到 TCP；当前只提供客户端和映射。
+
+## 自动接收模式
+
+一次启动，持续接收上游 SNN/root 发来的动作，再转发给机械臂：
+
+```powershell
+# 本机监听 9000，上游连 127.0.0.1:9000；arm 服务端在 172.30.187.22:9000
+python action_client.py --auto --from-snn --listen-port 9000 `
+  --host 172.30.187.22 --port 9000
+
+# 先不连真机，只看日志
+python action_client.py --auto --from-snn --listen-port 9000 --dry-run
+```
+
+- `--from-snn`：输入 `0/1/2` -> 左/右/停；也接受 `left/right/stop`。
+- `--listen-host` 默认 `0.0.0.0`；`--listen-port` 默认 `9000`。
+- 如果 `action_client.py` 和 `servicer.py` 在同一台机器，两个 9000 会冲突；
+  把 `--listen-port` 改成 `9100`，上游连 `9100`。
+- 仍是无回包、fire-and-forget；`sent` 只代表 TCP 写入。
